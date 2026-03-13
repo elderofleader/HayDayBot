@@ -28,95 +28,52 @@ class OrdersTask(
         }
     }
 
-    // ── Truck orders ──────────────────────────────────────────────────────────
-
     private suspend fun fillTruckOrders() {
         val bmp = screen() ?: return
-        val board = vision.find(bmp, "orders", "order_board") ?: run {
-            log("Order board not visible")
-            return
-        }
+        val board = vision.find(bmp, "orders", "order_board") ?: return
         tapMatch(board)
         delay(800)
 
-        var filled  = 0
-        var skipped = 0
-
-        repeat(10) {
-            val s = screen() ?: return
-            val slot = vision.find(s, "orders", "order_slot") ?: return
-
-            tapMatch(slot)
-            delay(500)
-
-            val orderScreen = screen() ?: return
-
-            // Can't fill?
-            if (vision.find(orderScreen, "orders", "order_not_enough") != null) {
-                log("Cannot fill — not enough items")
-                vision.find(orderScreen, "orders", "order_skip_btn")?.let {
-                    tapMatch(it)
-                    skipped++
-                } ?: input.swipe(640, 1200, 640, 400, durationMs = 200)
-                delay(300)
-                return@repeat
+        var filled = 0; var skipped = 0; var attempts = 0
+        while (attempts < 10) {
+            attempts++
+            val s = screen() ?: break
+            val slot = vision.find(s, "orders", "order_slot") ?: break
+            tapMatch(slot); delay(500)
+            val os = screen() ?: break
+            if (vision.find(os, "orders", "order_not_enough") != null) {
+                val skip = vision.find(os, "orders", "order_skip_btn")
+                if (skip != null) { tapMatch(skip); skipped++ }
+                else input.swipe(640, 1200, 640, 400, durationMs = 200)
+                delay(300); continue
             }
-
-            // Fill
-            vision.find(orderScreen, "orders", "order_fill_btn")?.let {
-                tapMatch(it)
-                filled++
-                BotStats.addOrder()
-                log("Order filled ✓")
-                delay(600)
-            } ?: input.swipe(640, 1200, 640, 400, durationMs = 200)
+            val fillBtn = vision.find(os, "orders", "order_fill_btn")
+            if (fillBtn != null) { tapMatch(fillBtn); filled++; BotStats.addOrder(); delay(600) }
+            else input.swipe(640, 1200, 640, 400, durationMs = 200)
         }
-
         log("Truck: filled=$filled skipped=$skipped")
-        // Close board
-        input.swipe(640, 1200, 640, 400, durationMs = 200)
-        delay(400)
+        input.swipe(640, 1200, 640, 400, durationMs = 200); delay(400)
     }
-
-    // ── Roadside shop ─────────────────────────────────────────────────────────
 
     private suspend fun restockShop() {
         val bmp = screen() ?: return
         val empties = vision.findAll(bmp, "orders", "shop_slot_empty")
-        if (empties.isEmpty()) {
-            log("No empty shop slots")
-            return
-        }
-
-        var restocked = 0
-        for (slot in empties.take(5)) {
-            tapMatch(slot)
-            delay(500)
-
+        if (empties.isEmpty()) { log("No empty shop slots"); return }
+        var restocked = 0; var i = 0
+        while (i < minOf(empties.size, 5)) {
+            tapMatch(empties[i++]); delay(500)
             val addScreen = screen() ?: continue
-            val addBtn = vision.find(addScreen, "orders", "shop_add_btn") ?: run {
-                input.swipe(640, 1200, 640, 400, durationMs = 200)
-                continue
-            }
-            tapMatch(addBtn)
-            delay(400)
-
+            val addBtn = vision.find(addScreen, "orders", "shop_add_btn")
+                ?: run { input.swipe(640, 1200, 640, 400, durationMs = 200); continue }
+            tapMatch(addBtn); delay(400)
             val pickScreen = screen() ?: continue
-            val item = vision.find(pickScreen, "orders", "shop_item_select") ?: run {
-                input.swipe(640, 1200, 640, 400, durationMs = 200)
-                input.swipe(640, 1200, 640, 400, durationMs = 200)
-                continue
-            }
-            tapMatch(item)
-            delay(400)
-
+            val item = vision.find(pickScreen, "orders", "shop_item_select")
+                ?: run { input.swipe(640, 1200, 640, 400, durationMs = 200); continue }
+            tapMatch(item); delay(400)
             val confScreen = screen() ?: continue
-            vision.find(confScreen, "orders", "shop_confirm")?.let {
-                tapMatch(it)
-                restocked++
-                log("Shop slot restocked ✓")
-            } ?: input.swipe(640, 1200, 640, 400, durationMs = 200)
-
+            val conf = vision.find(confScreen, "orders", "shop_confirm")
+            if (conf != null) { tapMatch(conf); restocked++; log("Shop slot restocked ✓") }
+            else input.swipe(640, 1200, 640, 400, durationMs = 200)
             delay(300)
         }
         log("Restocked $restocked shop slot(s)")
