@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hay Day Bot</string>
+    <string name="accessibility_service_label">Hay Day Bot Automation</string>
+    <string name="accessibility_service_description">Automates Hay Day farming: crops, animals, factory, and orders.</string>
+    <string name="btn_start">▶ Start Bot</string>
+    <string name="btn_stop">■ Stop Bot</string>
+    <string name="status_idle">Idle — tap Start to begin</string>
+    <string name="status_running">Bot running…</string>
+    <string name="status_stopped">Bot stopped</string>
+    <string name="perm_accessibility">Enable Accessibility Permission</string>
+    <string name="perm_overlay">Enable Overlay Permission</string>
+    <string name="perm_screenshot">Grant Screenshot Permission</string>
+</resources>
