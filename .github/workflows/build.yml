@@ -18,9 +18,15 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
-      - run: chmod +x gradlew
+      - name: Generate Gradle Wrapper
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip
+          unzip -q gradle-8.4-bin.zip
+          ./gradle-8.4/bin/gradle wrapper
+          chmod +x gradlew
 
-      - run: ./gradlew assembleDebug
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
